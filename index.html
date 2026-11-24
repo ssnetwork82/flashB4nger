@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flashbang</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#15171a;--floor:#1d2024;--steel:#8d949b;--steel-d:#4a5057;--olive:#5b6350;--text:#d9dde0;--dim:#7d848b;--accent:#e8e4d8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at 50% 38%,#23272c 0%,var(--bg) 65%);color:var(--text);font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none}
+.floor{position:fixed;left:0;right:0;bottom:0;height:24vh;background:linear-gradient(#1a1d21,#101214);border-top:1px solid #2a2e33}
+main{position:relative;display:flex;flex-direction:column;align-items:center;gap:1.4rem;z-index:2}
+#stage{width:min(34vh,200px);height:min(61vh,360px);transform-origin:50% 100%}
+#stage svg{width:100%;height:100%;overflow:visible}
+.shadow{position:absolute;bottom:-2vh;width:min(30vh,190px);height:18px;border-radius:50%;background:rgba(0,0,0,.55);filter:blur(8px);left:50%;transform:translateX(-50%)}
+.wrap{position:relative;display:flex;justify-content:center}
+h1{font-weight:700;font-size:clamp(2rem,6vw,3.2rem);letter-spacing:.04em;margin:0;color:var(--accent)}
+#count{font-weight:700;font-size:clamp(3.5rem,11vw,5.5rem);line-height:1;min-height:1em;color:var(--accent);font-variant-numeric:tabular-nums}
+#status{min-height:1.6em;margin:0;font-size:1.25rem;color:var(--dim);letter-spacing:.06em}
+button{font:700 1.4rem "Barlow Condensed","Arial Narrow",Arial,sans-serif;letter-spacing:.08em;color:#14160f;background:var(--accent);border:0;border-radius:3px;padding:.7rem 2.2rem;cursor:pointer;transition:transform .12s,background .12s}
+button:hover{background:#fff}
+button:active{transform:scale(.97)}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+button:disabled{opacity:.35;cursor:default}
+.warn{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));max-width:min(18rem,60vw);font-size:.95rem;color:var(--text);z-index:2;margin:0;text-align:right}
+
+/* pin + spoon motion */
+#pin,#spoon{transition:transform .55s cubic-bezier(.2,.8,.3,1),opacity .6s .15s}
+.pulled #pin{transform:translate(-70px,-34px) rotate(-40deg);opacity:0}
+.pulled #spoon{transform:translate(70px,-90px) rotate(70deg);opacity:0}
+.armed #stage{animation:shake .09s linear infinite}
+@keyframes shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-1.5px,0) rotate(-.6deg)}50%{transform:translate(1px,-1px) rotate(.4deg)}75%{transform:translate(-1px,1px) rotate(-.3deg)}100%{transform:translate(1.5px,0) rotate(.6deg)}}
+.armed #glow{opacity:1}
+#glow{opacity:0;transition:opacity 1.2s}
+#stage,.shadow{opacity:0}
+.show #stage,.show .shadow{opacity:1;transition:opacity .12s}
+.gone #stage,.gone .shadow{opacity:0;transition:none}
+.hit main{animation:slam .5s ease-out}
+@keyframes slam{0%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+/* the flash */
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:10}
+#flash::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#fff 0,#fffbe8 40%,#fff 100%)}
+@media (prefers-reduced-motion:reduce){.armed #stage{animation:none}.hit main{animation:none}}
+</style>
+</head>
+<body>
+<div class="floor"></div>
+<main id="root">
+  <div class="wrap">
+    <div class="shadow"></div>
+    <div id="stage" aria-hidden="true">
+      <svg viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="body" x1="0" x2="1">
+            <stop offset="0" stop-color="#3b4046"/><stop offset=".3" stop-color="#a3aab1"/>
+            <stop offset=".55" stop-color="#7a8187"/><stop offset="1" stop-color="#2f3338"/>
+          </linearGradient>
+          <linearGradient id="cap" x1="0" x2="1">
+            <stop offset="0" stop-color="#4f5650"/><stop offset=".35" stop-color="#7d8774"/><stop offset="1" stop-color="#363b33"/>
+          </linearGradient>
+          <radialGradient id="g"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".9"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle id="glow" cx="100" cy="200" r="150" fill="url(#g)"/>
+        <!-- body -->
+        <rect x="58" y="112" width="84" height="210" rx="14" fill="url(#body)"/>
+        <g stroke="#2a2e32" stroke-width="2" opacity=".55">
+          <path d="M58 140h84M58 296h84"/>
+        </g>
+        <g fill="#17191c">
+          <ellipse cx="82" cy="170" rx="6" ry="9"/><ellipse cx="100" cy="170" rx="6" ry="9"/><ellipse cx="118" cy="170" rx="6" ry="9"/>
+          <ellipse cx="82" cy="205" rx="6" ry="9"/><ellipse cx="100" cy="205" rx="6" ry="9"/><ellipse cx="118" cy="205" rx="6" ry="9"/>
+          <ellipse cx="82" cy="240" rx="6" ry="9"/><ellipse cx="100" cy="240" rx="6" ry="9"/><ellipse cx="118" cy="240" rx="6" ry="9"/>
+          <ellipse cx="82" cy="275" rx="6" ry="9"/><ellipse cx="100" cy="275" rx="6" ry="9"/><ellipse cx="118" cy="275" rx="6" ry="9"/>
+        </g>
+        <rect x="58" y="312" width="84" height="12" rx="5" fill="#2b2f33"/>
+        <!-- fuse head -->
+        <rect x="64" y="86" width="72" height="34" rx="7" fill="url(#cap)"/>
+        <rect x="86" y="62" width="28" height="30" rx="4" fill="#5d645a"/>
+        <rect x="86" y="62" width="28" height="6" rx="3" fill="#8a9382"/>
+        <!-- spoon -->
+        <g id="spoon" style="transform-origin:132px 76px">
+          <path d="M112 72h18q10 0 10 10v146q0 10-9 10h-6V92q0-6-6-6h-7z" fill="#a2a9b0" stroke="#2f3338" stroke-width="2"/>
+        </g>
+        <!-- pin -->
+        <g id="pin" style="transform-origin:90px 76px">
+          <path d="M92 76H64" stroke="#c9cdd1" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="52" cy="76" r="13" fill="none" stroke="#c9cdd1" stroke-width="4"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div id="count" aria-live="off">10</div>
+  <p id="status" role="status"></p>
+  <button id="go" type="button" hidden>Replay</button>
+</main>
+<p class="warn">0</p>
+<div id="flash"></div>
+
+<script>
+(function(){
+  var root=document.getElementById('root'),btn=document.getElementById('go'),
+      st=document.getElementById('status'),fl=document.getElementById('flash'),
+      body=document.body,ctx=null,timers=[];
+  function later(f,t){timers.push(setTimeout(f,t))}
+  function audio(){
+    try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume()}catch(e){ctx=null}
+  }
+  function click(){
+    if(!ctx)return;
+    try{var o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;
+      o.type='triangle';o.frequency.setValueAtTime(2400,t);o.frequency.exponentialRampToValueAtTime(900,t+.08);
+      g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.12);
+      o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.13)}catch(e){}
+  }
+  function bang(){
+    if(!ctx)return;
+    try{
+      var t=ctx.currentTime,len=ctx.sampleRate*.7,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
+      for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
+      var n=ctx.createBufferSource();n.buffer=buf;
+      var lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(7000,t);lp.frequency.exponentialRampToValueAtTime(300,t+.6);
+      var ng=ctx.createGain();ng.gain.value=.7;
+      n.connect(lp).connect(ng).connect(ctx.destination);n.start(t);
+      [4100,3150].forEach(function(f,k){
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.type='sine';o.frequency.value=f;
+        g.gain.setValueAtTime(0,t+.05);g.gain.linearRampToValueAtTime(k?.03:.05,t+.25);
+        g.gain.setValueAtTime(k?.03:.05,t+2.2);g.gain.exponentialRampToValueAtTime(.0005,t+7);
+        o.connect(g).connect(ctx.destination);o.start(t+.05);o.stop(t+7.2);
+      });
+    }catch(e){}
+  }
+  var cnt=document.getElementById('count');
+  function tickSound(last){
+    if(!ctx||ctx.state!=='running')return;
+    try{var o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;
+      o.type='square';o.frequency.value=last?1200:800;
+      g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);
+      o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.1)}catch(e){}
+  }
+  function resumeAudio(){audio();if(ctx&&ctx.state==='running'&&body.classList.contains('pulled')&&!body.classList.contains('gone'))st.textContent='';}
+  function reset(){
+    timers.forEach(clearTimeout);timers=[];
+    body.className='';fl.style.transition='none';fl.style.opacity=0;fl.style.filter='none';
+    btn.hidden=true;
+  }
+  function start(){
+    reset();audio();
+    cnt.textContent='10';
+    st.textContent=(ctx&&ctx.state==='running')?'':'Click anywhere to turn sound on.';
+    body.classList.add('pulled');click();
+    for(var i=1;i<=10;i++)(function(i){
+      later(function(){
+        var n=10-i;
+        cnt.textContent=n>0?n:'';
+        if(n>0)tickSound(n<=3);
+        if(n===1)body.classList.add('show','armed');
+        if(n===0){
+          body.classList.remove('armed');body.classList.add('gone','hit');
+          fl.style.transition='none';fl.style.filter='blur(0)';fl.style.opacity=1;
+          bang();st.textContent='';
+        }
+      },i*1000);
+    })(i);
+    later(function(){
+      fl.style.transition='opacity 4.5s cubic-bezier(.3,.1,.2,1),filter 4.5s ease-in';
+      fl.style.filter='blur(18px)';fl.style.opacity=0;
+    },11650);
+    later(function(){st.textContent='You can’t see. Your ears are ringing.'},13900);
+    later(function(){btn.hidden=false},15900);
+  }
+  document.addEventListener('pointerdown',resumeAudio);
+  document.addEventListener('keydown',resumeAudio);
+  btn.addEventListener('click',start);
+  start();
+})();
+</script>
+</body>
+</html>
